@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Skeleton Dragon</title>
+<style>
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #dcd9c9; touch-action: none; }
+  svg { display: block; width: 100%; height: 100%; }
+</style>
+</head>
+<body>
+<svg id="scene" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- Head -->
+    <g id="head">
+      <path d="M-12 0 L6 -6 L12 -2 L8 0 L12 2 L6 6 Z" fill="#111"/>
+      <circle cx="0" cy="-1.5" r="1" fill="#dcd9c9"/>
+      <path d="M2 -5 L-4 -11 M2 5 L-4 11" stroke="#111" stroke-width="1" vector-effect="non-scaling-stroke"/>
+    </g>
+    <!-- Vertebra -->
+    <g id="vert">
+      <path d="M-7 0 Q0 -4 7 0 Q0 4 -7 0Z" fill="#2b2b2b"/>
+      <path d="M-2 -3 L-1 -8 M-2 3 L-1 8" stroke="#222" stroke-width="1" vector-effect="non-scaling-stroke"/>
+    </g>
+    <!-- Ribs / wing bones (JS fills this) -->
+    <g id="ribs"></g>
+  </defs>
+  <g id="layer"></g>
+</svg>
+
+<script>
+const svg = document.getElementById("scene");
+const layer = document.getElementById("layer");
+const NS = "http://www.w3.org/2000/svg";
+const N = 40;               // body segments
+
+// Ribs: curved bones sweeping on both sides
+(function buildRibs() {
+  let d = "";
+  for (let k = 0; k < 6; k++) {
+    const x = -6 + k * 3, h = 10 + k * 5;
+    d += `M${x} 0 Q${x + 2} ${-h} ${x + 14} ${-h - 6} `;
+    d += `M${x} 0 Q${x + 2} ${h} ${x + 14} ${h + 6} `;
+  }
+  const p = document.createElementNS(NS, "path");
+  p.setAttribute("d", d);
+  p.setAttribute("fill", "none");
+  p.setAttribute("stroke", "#222");
+  p.setAttribute("stroke-width", "1");
+  p.setAttribute("vector-effect", "non-scaling-stroke");
+  p.setAttribute("stroke-linecap", "round");
+  document.getElementById("ribs").appendChild(p);
+  const v = document.createElementNS(NS, "use");
+  v.setAttribute("href", "#vert");
+  document.getElementById("ribs").appendChild(v);
+})();
+
+let width = 0, height = 0, rad = 0;
+function resize() {
+  width = innerWidth; height = innerHeight;
+  svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
+  rad = Math.min(width, height) / 4;
+}
+addEventListener("resize", resize);
+resize();
+
+const pointer = { x: width / 2, y: height / 2 };
+addEventListener("pointermove", ev => { pointer.x = ev.clientX; pointer.y = ev.clientY; });
+
+// Create elements
+const elems = [];
+for (let i = 0; i < N; i++) {
+  const use = document.createElementNS(NS, "use");
+  const id = i === 0 ? "#head" : (i > 5 && i < 22 ? "#ribs" : "#vert");
+  use.setAttribute("href", id);
+  layer.appendChild(use);
+  elems.push({ use, x: width / 2, y: height / 2 });
+}
+
+let frm = Math.random();
+
+const run = () => {
+  requestAnimationFrame(run);
+  frm += 0.003;
+
+  // Head: follows pointer + a figure-8 wobble
+  let e = elems[0];
+  const ax = (Math.cos(3 * frm) * rad * width) / height;
+  const ay = (Math.sin(4 * frm) * rad * height) / width;
+  e.x += (ax + pointer.x - e.x) / 10;
+  e.y += (ay + pointer.y - e.y) / 10;
+
+  // Body: every segment follows the one before it
+  for (let i = 1; i < N; i++) {
+    let e = elems[i];
+    let ep = elems[i - 1];
+    const a = Math.atan2(e.y - ep.y, e.x - ep.x);
+    e.x += (ep.x - e.x + (Math.cos(a) * (100 - i)) / 5) / 4;
+    e.y += (ep.y - e.y + (Math.sin(a) * (100 - i)) / 5) / 4;
+    const s = (162 + 4 * (1 - i)) / 50;   // size shrinks toward the tail
+    e.use.setAttributeNS(
+      null,
+      "transform",
+      `translate(${(ep.x + e.x) / 2},${(ep.y + e.y) / 2}) rotate(${(180 / Math.PI) * a}) scale(${s})`
+    );
+  }
+  // Head orientation
+  const h = elems[0], n = elems[1];
+  const ha = Math.atan2(h.y - n.y, h.x - n.x);
+  h.use.setAttributeNS(null, "transform",
+    `translate(${h.x},${h.y}) rotate(${(180 / Math.PI) * ha + 180}) scale(2.2)`);
+};
+run();
+</script>
+</body>
+</html>

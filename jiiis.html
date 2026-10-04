@@ -1,0 +1,196 @@
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>BhuKhaa Saap
+</title>
+<link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Orbitron:wght@700;900&display=swap" rel="stylesheet">
+<style>
+  :root { box-sizing: border-box; padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
+  html { scroll-padding-top: env(safe-area-inset-top, 0px); }
+  html, body { margin: 0; height: 100%; overflow: hidden; touch-action: none;
+    background: radial-gradient(ellipse at center, #eafdf5 0%, #bdeed7 20%, #3a7f63 55%, #0a1c18 100%); }
+  canvas { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 1; }
+  .title { position: fixed; inset: 0; z-index: 0; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; text-align: center; pointer-events: none; user-select: none; }
+  .name { font-family: 'Great Vibes', cursive; font-size: clamp(70px, 18vw, 190px); line-height: 1.05;
+    background: #1e5d47; color: #1e5d47; -webkit-background-clip: text; background-clip: text;
+    filter: drop-shadow(0 0 18px rgba(30, 93, 71, .35)); }
+  .px { font-family: 'Orbitron', 'Segoe UI', sans-serif; font-weight: 900; font-size: clamp(28px, 10vw, 104px);
+    letter-spacing: .32em; margin-right: -.32em; margin-top: -.1em;
+    background: #123f34; color: #123f34; -webkit-background-clip: text; background-clip: text;
+    filter: drop-shadow(0 0 14px rgba(18, 63, 52, .45)); }
+  .line { display: flex; align-items: center; gap: 12px; margin-top: 18px; width: min(70vw, 460px); color: #dffef2; font-size: 12px; }
+  .line i { flex: 1; height: 1px; background: linear-gradient(90deg, transparent, #dffef2, transparent); }
+  .tag { margin-top: 10px; font: 600 clamp(11px, 2.6vw, 15px) ui-monospace, Menlo, Consolas, monospace;
+    letter-spacing: .25em; color: rgba(196, 255, 228, .7); }
+  .hint { position: fixed; bottom: calc(18px + env(safe-area-inset-bottom, 0px)); left: 0; right: 0; z-index: 2; text-align: center;
+    font: 13px system-ui, sans-serif; color: rgba(9, 32, 26, .72); pointer-events: none; transition: opacity 1s; }
+  @keyframes shine { to { background-position: -250% 0; } }
+</style>
+</head>
+<body>
+<div class="title">
+  <div class="name">Krishna</div>
+  <div class="px">PARADOX</div>
+  <div class="line"><i></i>◆<i></i></div>
+  <div class="tag">KRISHNA_GREAT_PARADOX</div>
+</div>
+<canvas id="c"></canvas>
+<div class="hint" id="hint"></div>
+
+<script>
+const cv = document.getElementById('c'), ctx = cv.getContext('2d'), hint = document.getElementById('hint');
+let W, H, S;
+function resize() {
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  W = innerWidth; H = innerHeight;
+  cv.width = W * dpr; cv.height = H * dpr;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  S = Math.min(W, H) / 700;
+}
+addEventListener('resize', resize); resize();
+
+const N = 95;
+let openS = 0;
+const P = [], Q = [];
+for (let i = 0; i < N; i++) P.push({ x: W / 2 - i * 8, y: H / 2 });
+const ptr = { x: W / 2, y: H * 0.7 };
+addEventListener('pointermove', e => { ptr.x = e.clientX; ptr.y = e.clientY; hint.style.opacity = 0; });
+
+function tube(k, fill) {
+  ctx.beginPath();
+  for (let i = 0; i < N; i++) ctx.lineTo(Q[i].x + Q[i].nx * Q[i].r * k, Q[i].y + Q[i].ny * Q[i].r * k);
+  for (let i = N - 1; i >= 0; i--) ctx.lineTo(Q[i].x - Q[i].nx * Q[i].r * k, Q[i].y - Q[i].ny * Q[i].r * k);
+  ctx.closePath(); ctx.fillStyle = fill; ctx.fill();
+}
+
+function drawHead(t, R, open) {
+  const q = Q[0], ang = open * 0.5;
+  ctx.save(); ctx.translate(q.x, q.y); ctx.rotate(q.d);
+  // Tongue (flicks in bursts)
+  const ph = t % 1.8;
+  if (ph < 0.8) {
+    const k = Math.sin(ph / 0.8 * Math.PI) * (0.65 + 0.35 * Math.sin(ph * 36));
+    const len = R * 1.9 * k, x0 = R * 1.2 + open * R;
+    ctx.strokeStyle = '#ff1744'; ctx.lineWidth = 2.4 * S; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(R * 1.0, 0); ctx.lineTo(x0 + R + len, 0);
+    ctx.moveTo(x0 + R + len, 0); ctx.lineTo(x0 + R + len * 1.3, -R * .3 * k);
+    ctx.moveTo(x0 + R + len, 0); ctx.lineTo(x0 + R + len * 1.3, R * .3 * k); ctx.stroke();
+  }
+  // Skull
+  ctx.fillStyle = '#133c2d'; ctx.strokeStyle = '#08251c'; ctx.lineWidth = 1.6 * S;
+  ctx.beginPath(); ctx.ellipse(-R * .1, 0, R * .95, R * .78, 0, 0, 7); ctx.fill(); ctx.stroke();
+  // Open mouth interior
+  if (open > .04) {
+    const tl = R * 2.2, tx = tl * Math.cos(ang), ty = tl * Math.sin(ang);
+    const g = ctx.createLinearGradient(0, 0, tx, 0);
+    g.addColorStop(0, '#0d3d2f'); g.addColorStop(1, '#5be0a7');
+    ctx.fillStyle = g; ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(tx, -ty); ctx.lineTo(tx, ty); ctx.closePath(); ctx.fill();
+  }
+  // Two jaws (rotate outward when open) + fangs
+  for (const sd of [-1, 1]) {
+    ctx.save(); ctx.scale(1, sd); ctx.rotate(-ang);
+    ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(0, -R * .74);
+    ctx.bezierCurveTo(R * .8, -R * 1.0, R * 1.6, -R * .65, R * 2.15, -R * .2);
+    ctx.quadraticCurveTo(R * 2.3, -R * .02, R * 2.15, 0); ctx.closePath();
+    const g = ctx.createLinearGradient(0, -R, 0, 0);
+    g.addColorStop(0, '#151510'); g.addColorStop(1, '#4a4630');
+    ctx.fillStyle = g; ctx.fill(); ctx.stroke();
+    if (open > .15) {
+      ctx.fillStyle = '#fff'; ctx.strokeStyle = '#999'; ctx.lineWidth = .8 * S;
+      ctx.beginPath(); ctx.moveTo(R * 1.45, -R * .05); ctx.lineTo(R * 1.9, -R * .05); ctx.lineTo(R * 1.75, R * .42);
+      ctx.closePath(); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = '#5cff3a'; ctx.beginPath(); ctx.arc(R * 1.75, R * .5, R * .06, 0, 7); ctx.fill();
+      ctx.strokeStyle = '#000'; ctx.lineWidth = 1.6 * S;
+    }
+    ctx.restore();
+  }
+  // Jungle-green crest stripe
+  ctx.fillStyle = '#1d7f59'; ctx.beginPath(); ctx.ellipse(-R * .1, 0, R * .8, R * .13, 0, 0, 7); ctx.fill();
+  // Glowing eyes + brows
+  for (const sd of [-1, 1]) {
+    ctx.save(); ctx.shadowColor = '#7ef0bf'; ctx.shadowBlur = 14 * S;
+    ctx.fillStyle = '#9ef5cf'; ctx.beginPath(); ctx.arc(R * .95, sd * R * .5, R * .26, 0, 7); ctx.fill(); ctx.restore();
+    ctx.fillStyle = '#0e5f45'; ctx.beginPath(); ctx.arc(R * .95, sd * R * .5, R * .14, 0, 7); ctx.fill();
+    ctx.fillStyle = '#eafff4'; ctx.beginPath(); ctx.ellipse(R * .95, sd * R * .5, R * .045, R * .22, 0, 0, 7); ctx.fill();
+    ctx.strokeStyle = '#07281d'; ctx.lineWidth = 4.5 * S; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(R * .5, sd * R * .9); ctx.lineTo(R * 1.4, sd * R * .3); ctx.stroke();
+    ctx.fillStyle = '#0a2e22'; ctx.beginPath(); ctx.arc(R * 2.0, sd * R * .13, R * .05, 0, 7); ctx.fill();
+  }
+  ctx.restore();
+}
+
+function frame(ms) {
+  requestAnimationFrame(frame);
+  const t = ms / 1000, L = 9 * S, R = 15 * S, rr = Math.min(W, H) / 6;
+  ctx.clearRect(0, 0, W, H);
+
+  // Head follows pointer + a lazy figure-8 wander
+  let tx = ptr.x + Math.cos(t * 1.3) * rr, ty = ptr.y + Math.sin(t * 1.9) * rr * .8;
+  tx = Math.max(24, Math.min(W - 24, tx)); ty = Math.max(24, Math.min(H - 24, ty));
+  const ox = P[0].x, oy = P[0].y;
+  P[0].x += (tx - P[0].x) * .06; P[0].y += (ty - P[0].y) * .06;
+  const sp = Math.hypot(P[0].x - ox, P[0].y - oy) / S;
+  const hp = t % 5, hiss = hp < 1.4 ? Math.sin(hp / 1.4 * Math.PI) : 0;   // regular hiss
+  openS += (Math.max(Math.min(sp * .09, 1), hiss) - openS) * .2;
+
+  // Body follows the head, fixed spacing
+  for (let i = 1; i < N; i++) {
+    const a = P[i - 1], b = P[i];
+    const dx = b.x - a.x, dy = b.y - a.y, d = Math.hypot(dx, dy) || 1;
+    b.x = a.x + dx / d * L; b.y = a.y + dy / d * L;
+  }
+
+  // Body outline points (width profile + slither wave)
+  for (let i = 0; i < N; i++) {
+    const a = P[Math.max(i - 1, 0)], b = P[Math.min(i + 1, N - 1)];
+    const d = Math.atan2(a.y - b.y, a.x - b.x), nx = -Math.sin(d), ny = Math.cos(d);
+    const u = i / (N - 1), v = Math.max(0, (u - .45) / .55);
+    const r = R * (u < .1 ? .55 + 4.5 * u : 1 - Math.pow(v, 1.5) * .92);
+    const w = Math.sin(i * .3 - t * 4) * 3 * S * Math.min(1, i / 10);
+    Q[i] = { x: P[i].x + nx * w, y: P[i].y + ny * w, nx, ny, r, d };
+  }
+
+  // Shadow
+  ctx.save(); ctx.translate(6 * S, 10 * S); ctx.globalAlpha = .35; tube(1.05, '#000'); ctx.restore();
+  // Mint glow aura
+  ctx.save(); ctx.shadowColor = 'rgba(126, 240, 191, .7)'; ctx.shadowBlur = 26 * S; tube(1.08, '#000'); ctx.restore();
+  // Thorns along both sides
+  ctx.fillStyle = '#1d7f59'; ctx.strokeStyle = '#072d22'; ctx.lineWidth = 1 * S;
+  for (let i = 7; i < N - 8; i += 3) {
+    const q = Q[i], cx = Math.cos(q.d), cy = Math.sin(q.d);
+    for (const sd of [-1, 1]) {
+      ctx.beginPath();
+      ctx.moveTo(q.x + sd * q.nx * q.r * .9 + cx * L * .5, q.y + sd * q.ny * q.r * .9 + cy * L * .5);
+      ctx.lineTo(q.x + sd * q.nx * q.r * 1.75 - cx * L * 1.3, q.y + sd * q.ny * q.r * 1.75 - cy * L * 1.3);
+      ctx.lineTo(q.x + sd * q.nx * q.r * .9 - cx * L * .5, q.y + sd * q.ny * q.r * .9 - cy * L * .5);
+      ctx.closePath(); ctx.fill(); ctx.stroke();
+    }
+  }
+  // Tube shading: dark edge -> mint centre
+  ctx.lineJoin = 'round';
+  tube(1.08, '#041d18'); tube(1, '#0d3129'); tube(.8, '#1b5b4b'); tube(.55, '#42a57d'); tube(.25, '#a9f5d2');
+
+  // Python blotches
+  ctx.lineWidth = 1.6 * S;
+  for (let i = 5; i < N - 4; i += 4) {
+    const q = Q[i];
+    ctx.save(); ctx.translate(q.x, q.y); ctx.rotate(q.d);
+    ctx.fillStyle = '#14614b'; ctx.strokeStyle = '#d9ffef';
+    ctx.beginPath(); ctx.ellipse(0, 0, L * 1.7, q.r * .6, 0, 0, 7); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = '#0d342b';
+    ctx.beginPath(); ctx.ellipse(0, 0, L * .9, q.r * .28, 0, 0, 7); ctx.fill();
+    ctx.restore();
+    const q2 = Q[i + 2];
+    ctx.save(); ctx.translate(q2.x, q2.y); ctx.rotate(q2.d); ctx.fillStyle = '#2e7d5d';
+    for (const s of [-1, 1]) { ctx.beginPath(); ctx.ellipse(0, s * q2.r * .8, L * .9, q2.r * .2, 0, 0, 7); ctx.fill(); }
+    ctx.restore();
+  }
+
+  drawHead(t, R, openS);
+}
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
